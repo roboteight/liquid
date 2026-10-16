@@ -14,6 +14,7 @@ import { LightSource } from './light-source';
 import { TimeSlider } from './time-slider';
 import { LiquidCanvas } from './liquid-canvas';
 import { LiquidSettings } from './liquid-settings';
+import { SceneDescription } from './scene-description';
 
 /** Typing this word makes the input drop into the water. */
 const TRIGGER = /something/i;
@@ -24,7 +25,7 @@ const HINT_STORAGE_KEY = 'liquid-hint-done';
 
 @Component({
   selector: 'app-root',
-  imports: [LiquidCanvas, ControlsDrawer, LightSource, Clouds, TimeSlider],
+  imports: [LiquidCanvas, ControlsDrawer, LightSource, Clouds, TimeSlider, SceneDescription],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styleUrl: './app.css',
   host: {
@@ -37,6 +38,7 @@ const HINT_STORAGE_KEY = 'liquid-hint-done';
   template: `
     <main>
       <h1 class="sr-only">Liquid: type to drop letters into the water</h1>
+      <app-scene-description />
       <div class="sky" aria-hidden="true"></div>
       <app-clouds layer="back" aria-hidden="true" />
       <header>
