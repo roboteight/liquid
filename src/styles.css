@@ -1,6 +1,280 @@
+/* Theme colours. Components use these variables; the canvases read the theme from ThemeService.
+   The colours are registered properties so that they can animate: when data-theme changes they cross-fade
+   (the canvases fade with ThemeService.tone, which runs for the same length of time). */
+@property --bg-base {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0a0f1f;
+}
+
+@property --text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #eaf8ff;
+}
+
+@property --placeholder {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(200, 230, 255, 0.65);
+}
+
+@property --control-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(160, 220, 255, 0.6);
+}
+
+@property --thumb-on {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #0a0f1f;
+}
+
+@property --glass {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.07);
+}
+
+@property --btn {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 255, 255, 0.09);
+}
+
+@property --btn-on {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(120, 220, 255, 0.25);
+}
+
+@property --border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(160, 220, 255, 0.35);
+}
+
+@property --border-focus {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(120, 220, 255, 0.9);
+}
+
+@property --focus-glow {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(80, 200, 255, 0.35);
+}
+
+@property --panel {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(10, 18, 40, 0.82);
+}
+
+@property --panel-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(160, 220, 255, 0.25);
+}
+
+@property --ui-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #dff3ff;
+}
+
+@property --accent {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #5fd0ff;
+}
+
+@property --accent-text {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(160, 225, 255, 0.9);
+}
+
+@property --divider {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(160, 220, 255, 0.15);
+}
+
+@property --reset-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(160, 220, 255, 0.4);
+}
+
+@property --sun-btn-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: #ffe9a8;
+}
+
+@property --sun-btn-border {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 226, 150, 0.7);
+}
+
+@property --sun-btn-bg {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgba(255, 226, 150, 0.18);
+}
+
+@property --vig-color {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: rgb(2, 6, 22);
+}
+
+@property --vig-mul {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 1;
+}
+
+/* 1 in light mode, 0 in dark: fades the light sky in over the dark one (see app.css). */
+@property --light-amount {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+@property --light-ui-l {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 93%;
+}
+
+@property --sky-glow-l {
+  syntax: '<percentage>';
+  inherits: true;
+  initial-value: 44%;
+}
+
+:root,
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg-base: #0a0f1f;
+  --light-amount: 0;
+  --text: #eaf8ff;
+  --placeholder: rgba(200, 230, 255, 0.65);
+  --control-border: rgba(160, 220, 255, 0.6);
+  --thumb-on: #0a0f1f;
+  --glass: rgba(255, 255, 255, 0.07);
+  --btn: rgba(255, 255, 255, 0.09);
+  --btn-on: rgba(120, 220, 255, 0.25);
+  --border: rgba(160, 220, 255, 0.35);
+  --border-focus: rgba(120, 220, 255, 0.9);
+  --focus-glow: rgba(80, 200, 255, 0.35);
+  --panel: rgba(10, 18, 40, 0.82);
+  --panel-border: rgba(160, 220, 255, 0.25);
+  --ui-text: #dff3ff;
+  --accent: #5fd0ff;
+  --accent-text: rgba(160, 225, 255, 0.9);
+  --divider: rgba(160, 220, 255, 0.15);
+  --reset-border: rgba(160, 220, 255, 0.4);
+  --sun-btn-color: #ffe9a8;
+  --sun-btn-border: rgba(255, 226, 150, 0.7);
+  --sun-btn-bg: rgba(255, 226, 150, 0.18);
+  --vig-color: rgb(2, 6, 22);
+  --vig-mul: 1;
+  --light-ui-l: 93%;
+  --sky-blend: screen;
+  --sky-glow-l: 44%;
+}
+
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg-base: #cde4f8;
+  --light-amount: 1;
+  --text: #0f2a47;
+  --placeholder: rgba(15, 42, 71, 0.78);
+  --control-border: rgba(30, 90, 160, 0.7);
+  --thumb-on: #ffffff;
+  --glass: rgba(255, 255, 255, 0.55);
+  --btn: rgba(255, 255, 255, 0.6);
+  --btn-on: rgba(40, 130, 220, 0.2);
+  --border: rgba(30, 90, 160, 0.35);
+  --border-focus: rgba(20, 110, 200, 0.9);
+  --focus-glow: rgba(30, 120, 220, 0.3);
+  --panel: rgba(255, 255, 255, 0.88);
+  --panel-border: rgba(30, 90, 160, 0.22);
+  --ui-text: #12304f;
+  --accent: #1673c8;
+  --accent-text: rgba(20, 95, 170, 0.95);
+  --divider: rgba(30, 90, 160, 0.15);
+  --reset-border: rgba(30, 90, 160, 0.4);
+  --sun-btn-color: #a85d00;
+  --sun-btn-border: rgba(200, 120, 10, 0.7);
+  --sun-btn-bg: rgba(255, 190, 70, 0.3);
+  --vig-color: rgb(30, 60, 110);
+  --vig-mul: 0.5;
+  --light-ui-l: 34%;
+  --sky-blend: normal;
+  --sky-glow-l: 82%;
+}
+
+/* Switching between light and dark fades every colour over this long, instead of flipping. */
+:root {
+  transition:
+    --bg-base 1.4s ease,
+    --text 1.4s ease,
+    --placeholder 1.4s ease,
+    --control-border 1.4s ease,
+    --thumb-on 1.4s ease,
+    --glass 1.4s ease,
+    --btn 1.4s ease,
+    --btn-on 1.4s ease,
+    --border 1.4s ease,
+    --border-focus 1.4s ease,
+    --focus-glow 1.4s ease,
+    --panel 1.4s ease,
+    --panel-border 1.4s ease,
+    --ui-text 1.4s ease,
+    --accent 1.4s ease,
+    --accent-text 1.4s ease,
+    --divider 1.4s ease,
+    --reset-border 1.4s ease,
+    --sun-btn-color 1.4s ease,
+    --sun-btn-border 1.4s ease,
+    --sun-btn-bg 1.4s ease,
+    --vig-color 1.4s ease,
+    --vig-mul 1.4s ease,
+    --light-amount 1.4s ease,
+    --light-ui-l 1.4s ease,
+    --sky-glow-l 1.4s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    transition: none;
+  }
+}
+
 html,
 body {
   margin: 0;
   height: 100%;
-  background: #0a0f1f;
+  background: var(--bg-base);
+}
+
+/* Text for screen readers only: present in the accessibility tree, invisible on screen. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
 }

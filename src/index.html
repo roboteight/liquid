@@ -6,6 +6,45 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <script>
+    // Apply the theme before the first paint so the page never flashes the wrong one. The default follows the
+    // sun: light between today's sunrise and sunset (saved by the app from the user's location; 06:00-18:00 until
+    // it has run once), dark otherwise. A manual choice only counts if it was made in the current stretch of day
+    // or night (see ThemeService).
+    (function () {
+      var now = new Date();
+      var hour = now.getHours() + now.getMinutes() / 60;
+      var today = now.getFullYear() + '-' + (now.getMonth() + 1) + '-' + now.getDate();
+      var rise = 6;
+      var set = 18;
+      var dawn = 6; // when the night before dawn ends (used to date a night)
+      var alwaysUp = false;
+      try {
+        var sun = JSON.parse(localStorage.getItem('liquid-sun'));
+        if (sun && sun.date === today) {
+          if (sun.rise !== null && sun.set !== null) {
+            rise = sun.rise;
+            set = sun.set;
+            dawn = sun.rise;
+          } else {
+            alwaysUp = !!sun.alwaysUp;
+            rise = alwaysUp ? 0 : 24;
+            set = alwaysUp ? 24 : 24;
+          }
+        }
+      } catch (e) {}
+      var day = hour >= rise && hour < set;
+      var theme = day ? 'light' : 'dark';
+      try {
+        var saved = JSON.parse(localStorage.getItem('liquid-theme'));
+        var date = new Date(now);
+        if (!day && hour < dawn) date.setDate(date.getDate() - 1);
+        var period = date.getFullYear() + '-' + (date.getMonth() + 1) + '-' + date.getDate() + '-' + (day ? 'day' : 'night');
+        if (saved && saved.period === period && (saved.mode === 'light' || saved.mode === 'dark')) theme = saved.mode;
+      } catch (e) {}
+      document.documentElement.dataset.theme = theme;
+    })();
+  </script>
 </head>
 <body>
   <app-root></app-root>
