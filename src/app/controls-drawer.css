@@ -1,0 +1,121 @@
+:host {
+  position: fixed;
+  inset: 0 0 0 auto;
+  z-index: 10;
+  pointer-events: none;
+  color: #dff3ff;
+  font: 14px/1.3 system-ui, sans-serif;
+}
+
+.toggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  color: inherit;
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(160, 220, 255, 0.35);
+  border-radius: 50%;
+  backdrop-filter: blur(8px);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: right 0.3s ease, background 0.2s;
+}
+
+.toggle:hover,
+.toggle.open {
+  background: rgba(120, 220, 255, 0.25);
+}
+
+.toggle.open {
+  right: calc(min(340px, 100vw) + 1rem);
+}
+
+aside {
+  position: absolute;
+  inset: 0 0 0 auto;
+  box-sizing: border-box;
+  width: min(340px, 100vw);
+  padding: 1rem 1.25rem 2rem;
+  overflow-y: auto;
+  background: rgba(10, 18, 40, 0.82);
+  border-left: 1px solid rgba(160, 220, 255, 0.25);
+  backdrop-filter: blur(16px);
+  transform: translateX(100%);
+  visibility: hidden;
+  transition: transform 0.3s ease, visibility 0s 0.3s;
+  pointer-events: auto;
+}
+
+aside.open {
+  transform: none;
+  visibility: visible;
+  transition: transform 0.3s ease;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.reset {
+  padding: 0.35rem 0.8rem;
+  color: inherit;
+  background: transparent;
+  border: 1px solid rgba(160, 220, 255, 0.4);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.reset:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+details {
+  border-top: 1px solid rgba(160, 220, 255, 0.15);
+  padding: 0.6rem 0;
+}
+
+summary {
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  color: rgba(160, 225, 255, 0.9);
+  cursor: pointer;
+}
+
+label {
+  display: block;
+  margin-top: 0.7rem;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.2rem;
+}
+
+output {
+  font-variant-numeric: tabular-nums;
+  color: rgba(160, 225, 255, 0.9);
+}
+
+input[type='range'] {
+  width: 100%;
+  margin: 0;
+  accent-color: #5fd0ff;
+}
