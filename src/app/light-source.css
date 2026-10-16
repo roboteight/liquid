@@ -1,0 +1,162 @@
+/* No box of its own: each piece is stacked separately so front clouds can slip between the grab area
+   (below the clouds) and the dimming vignette (above). The sun and its glow are drawn in the water canvas. */
+:host {
+  display: contents;
+}
+
+:host([hidden]) {
+  display: none;
+}
+
+/* Everything outside the spotlight is dimmed; --inner is where the clear centre ends. */
+.vignette {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 7;
+  background: radial-gradient(
+    circle var(--lr) at calc(var(--lx) * 100%) calc(var(--ly) * 100%),
+    transparent 0%,
+    transparent var(--inner),
+    color-mix(in srgb, var(--vig-color) calc(var(--dark) * var(--vig-mul) * 35%), transparent) calc(var(--inner) + (100% - var(--inner)) * 0.55),
+    color-mix(in srgb, var(--vig-color) calc(var(--dark) * var(--vig-mul) * 100%), transparent) 100%
+  );
+}
+
+/* Small label above the sun. Fixed and above the header and clouds so nothing hides it. */
+.tip {
+  position: fixed;
+  z-index: 9;
+  padding: 4px 10px;
+  font: 600 12px/1.3 system-ui, sans-serif;
+  white-space: nowrap;
+  color: var(--ui-text);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - max(22px, var(--orb-size) / 2) - 8px));
+  transition: opacity 0.15s;
+}
+
+/* An invisible bridge toward the sun, so the pointer can travel from the sun onto the tooltip without it
+   disappearing (the tooltip stays visible while it is hovered). */
+.tip::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -14px;
+  height: 14px;
+}
+
+.tip.below::before {
+  bottom: auto;
+  top: -14px;
+}
+
+.tip.below {
+  transform: translate(-50%, calc(max(22px, var(--orb-size) / 2) + 8px));
+}
+
+.tip.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.light {
+  position: fixed;
+  z-index: 5;
+  width: 0;
+  height: 0;
+}
+
+.ring {
+  position: absolute;
+  pointer-events: none; /* it is a big disc: it must never swallow the mouse meant for the water */
+  left: 0;
+  top: 0;
+  box-sizing: border-box;
+  border: 1.5px dashed hsl(var(--light-hue) 100% var(--light-ui-l) / 0.18);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  transition: border-color 0.2s;
+}
+
+.active .ring {
+  border-color: hsl(var(--light-hue) 100% var(--light-ui-l) / 0.55);
+}
+
+button {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 0;
+  border: 0;
+  cursor: grab;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+button:active {
+  cursor: grabbing;
+}
+
+/* Invisible grab area; a thin outline appears on hover so it can still be found underwater. */
+.orb {
+  width: max(44px, var(--orb-size));
+  height: max(44px, var(--orb-size));
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  border: 1.5px solid transparent;
+  transition: border-color 0.2s;
+}
+
+.active .orb {
+  border-color: hsl(var(--light-hue) 100% var(--light-ui-l) / 0.6);
+}
+
+.handle {
+  /* A 24px target around a 16px dot (the transparent border is the extra grab area). */
+  width: 24px;
+  height: 24px;
+  border: 4px solid transparent;
+  background-clip: padding-box;
+  border-radius: 50%;
+  background: hsl(var(--light-hue) 100% var(--light-ui-l) / 0.85);
+  box-shadow: 0 0 10px hsl(var(--light-hue) 100% var(--light-ui-l) / 0.7);
+  cursor: nwse-resize;
+  opacity: 0.35;
+  transition: opacity 0.2s;
+}
+
+.active .handle,
+.handle:focus-visible {
+  opacity: 1;
+}
+
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tip,
+  .ring,
+  button {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .tip {
+    border: 1px solid CanvasText;
+  }
+
+  .orb {
+    border: 1px solid ButtonText;
+  }
+}
