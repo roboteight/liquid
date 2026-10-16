@@ -1,0 +1,316 @@
+:host {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 1.25rem;
+  z-index: 9;
+  display: flex;
+  justify-content: center;
+  padding: 0 1rem;
+  pointer-events: none;
+}
+
+.bar {
+  transition: opacity 0.4s ease;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.9rem;
+  width: min(620px, 100%);
+  padding: 0.55rem 1.1rem 0.4rem;
+  color: var(--ui-text);
+  font: 500 14px/1.2 system-ui, sans-serif;
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 20px;
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  pointer-events: auto;
+}
+
+/* The picture of the path, with the real slider laid exactly over it. */
+.track {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  height: 76px; /* the 52px picture, with a row of labels beneath it that the thumb never reaches */
+}
+
+/* The native thumb is 22px wide, so its travel is inset by 11px each side; the picture uses the same inset. */
+.track svg {
+  position: absolute;
+  top: 0;
+  left: 11px;
+  right: 11px;
+  width: calc(100% - 22px);
+  height: 52px;
+  overflow: visible;
+}
+
+path {
+  fill: none;
+  vector-effect: non-scaling-stroke;
+  stroke-linecap: round;
+}
+
+.horizon {
+  stroke: var(--divider);
+  stroke-width: 1.5;
+}
+
+.day {
+  stroke: var(--accent-text);
+  stroke-width: 2.5;
+}
+
+/* The sun's path below the horizon line, at night. */
+.below {
+  stroke: var(--accent-text);
+  stroke-width: 2;
+  stroke-dasharray: 5 5;
+  opacity: 0.6;
+}
+
+.night {
+  stroke: var(--accent-text);
+  stroke-width: 2;
+  stroke-dasharray: 2 6;
+  opacity: 0.55; /* the moon's path: fainter and dotted, so it reads as secondary to the sun's */
+}
+
+.mark {
+  position: absolute;
+  bottom: 0;
+  white-space: nowrap;
+  left: calc(11px + (100% - 22px) * var(--at));
+  transform: translateX(-50%);
+  font-size: 11px;
+  color: var(--accent-text);
+  pointer-events: none;
+}
+
+.thumb {
+  position: absolute;
+  left: calc(11px + (100% - 22px) * var(--at));
+  width: 22px;
+  height: 22px;
+  margin: 0 0 -11px -11px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff3b0 0%, #ffbf3a 55%, #f08a1c 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 0 14px 3px rgba(255, 190, 60, 0.65);
+  pointer-events: none;
+}
+
+.thumb.moon {
+  background: radial-gradient(circle at 35% 35%, #ffffff 0%, #dfe8fb 55%, #b3c3ea 100%);
+  box-shadow: 0 0 12px 2px rgba(190, 210, 255, 0.6);
+}
+
+/* Once the light has been dragged off its path the thumb is dimmed and dashed: it is no longer where the light is. */
+.manual .thumb {
+  opacity: 0.55;
+  border-style: dashed;
+}
+
+input[type='range'] {
+  appearance: none;
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  touch-action: none;
+}
+
+input[type='range']::-webkit-slider-runnable-track {
+  background: transparent;
+}
+
+input[type='range']::-moz-range-track {
+  background: transparent;
+}
+
+/* The native thumb is invisible but keeps its size, so dragging anywhere works. */
+input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 76px;
+  background: transparent;
+  border: 0;
+}
+
+input[type='range']::-moz-range-thumb {
+  width: 22px;
+  height: 76px;
+  background: transparent;
+  border: 0;
+}
+
+input[type='range']:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 12px;
+}
+
+.pin {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  color: var(--accent-text);
+  background: transparent;
+  border: 1px solid var(--reset-border);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.pin.on {
+  color: var(--thumb-on);
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.pin:hover {
+  background: var(--btn-on);
+}
+
+.pin.on:hover {
+  background: var(--accent);
+  filter: brightness(1.1);
+}
+
+.pin:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* A short message above the bar, e.g. when location access is declined. */
+.note {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  max-width: min(520px, 92vw);
+  margin: 0;
+  padding: 0.45rem 0.9rem;
+  font: 500 13px/1.35 system-ui, sans-serif;
+  text-align: center;
+  color: var(--ui-text);
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 14px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.22);
+  backdrop-filter: blur(12px);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* The time, with a small "Now" link beneath it once the time has been changed. */
+.readout {
+  display: flex;
+  flex: none;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.35rem;
+  min-width: 6.2em;
+}
+
+.time {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.now {
+  min-height: 24px; /* WCAG 2.2 target size */
+  padding: 0.15rem 0.6rem;
+  color: inherit;
+  font: inherit;
+  font-size: 12px;
+  background: transparent;
+  border: 1px solid var(--reset-border);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.now.hidden {
+  visibility: hidden;
+}
+
+.now:hover {
+  background: var(--btn-on);
+}
+
+.now:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@media (forced-colors: active) {
+  .bar {
+    border: 1px solid CanvasText;
+  }
+
+  .day,
+  .night,
+  .horizon {
+    stroke: CanvasText;
+  }
+
+  .thumb {
+    background: Highlight;
+    border-color: HighlightText;
+  }
+}
+
+/* Narrow screens: the picture gets the whole width, with the pin and time on a row beneath it. */
+@media (max-width: 560px) {
+  .bar {
+    gap: 0.4rem 0.9rem;
+    padding: 0.55rem 0.9rem 0.6rem;
+  }
+
+  .track {
+    order: 0;
+    flex: 1 0 100%;
+  }
+
+  .pin {
+    order: 1;
+  }
+
+  .readout {
+    order: 2;
+    margin-left: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.6rem;
+  }
+}
+
+/* With a pointer the bar starts fully visible, dims when idle (it never disappears), and returns to full on hover,
+   focus, a message, or just after load (.show). Touch screens have no hover, so it stays fully visible there. */
+@media (hover: hover) {
+  .bar {
+    opacity: 0.45;
+  }
+
+  .bar:hover,
+  .bar:focus-within,
+  .bar.show {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bar {
+    transition: none;
+  }
+}
