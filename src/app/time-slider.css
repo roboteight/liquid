@@ -171,6 +171,17 @@ input[type='range']:focus-visible {
   cursor: pointer;
 }
 
+/* While the device's location is being found the pin pulses (still, for reduced motion). */
+.pin.busy {
+  animation: pin-busy 1.4s ease-in-out infinite;
+}
+
+@keyframes pin-busy {
+  50% {
+    opacity: 0.4;
+  }
+}
+
 .pin.on {
   color: var(--thumb-on);
   background: var(--accent);
@@ -312,5 +323,9 @@ input[type='range']:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .bar {
     transition: none;
+  }
+
+  .pin.busy {
+    animation: none;
   }
 }

@@ -138,6 +138,8 @@ export interface Body {
 }
 
 const STORAGE_LOCATION = 'liquid-location';
+/** Pauses before each automatic retry of a location that could not be found yet. */
+const LOCATE_RETRY_DELAYS = [5_000, 15_000, 45_000];
 const STORAGE_SUN = 'liquid-sun';
 const DAY_MS = 86_400_000;
 
@@ -166,6 +168,9 @@ export class LiquidSettings {
   readonly locationSource = signal<'estimate' | 'device' | 'manual'>('estimate');
   /** Last thing to say about finding the location (shown briefly, and announced to screen readers). */
   readonly locationMessage = signal('');
+  /** True while the device's location is being looked for (including between automatic retries). */
+  readonly locating = signal(false);
+  private locateRetry?: ReturnType<typeof setTimeout>;
   /** The same message while it is on screen (cleared after a few seconds); other things can move out of its way. */
   readonly locationNote = signal('');
   private noteTimer?: ReturnType<typeof setTimeout>;
@@ -360,39 +365,71 @@ export class LiquidSettings {
       this.say('Location access is blocked, so the sun uses an estimate from your time zone.');
       return;
     }
-    void this.useDeviceLocation();
+    void this.useDeviceLocation(true);
   }
 
-  /** Asks the browser for the device's location (this is what shows the permission prompt). */
-  useDeviceLocation(): Promise<boolean> {
+  /**
+   * Asks the browser for the device's location (this is what shows the permission prompt). Called on load with
+   * `automatic`, it is patient: a device can take a while to work out where it is (Wi-Fi positioning on a laptop
+   * often needs longer than a few seconds), so it waits up to 20s and tries again in the background a few times
+   * rather than giving up, and the pin lights by itself as soon as a fix arrives, with nothing to click. A place
+   * the user has typed in by hand is never overwritten by an automatic fix.
+   */
+  useDeviceLocation(automatic = false): Promise<boolean> {
+    clearTimeout(this.locateRetry);
+    return this.locate(automatic, 0);
+  }
+
+  private locate(automatic: boolean, attempt: number): Promise<boolean> {
     return new Promise((resolve) => {
+      const finish = (found: boolean) => {
+        this.locating.set(false);
+        resolve(found);
+      };
       if (!('geolocation' in navigator)) {
         this.say('This browser cannot share a location, so the sun uses an estimate from your time zone.');
-        resolve(false);
+        finish(false);
         return;
       }
-      this.say('Finding your location…');
+      // If a saved device location is already in use, refreshing it in the background is silent: no pulsing pin and
+      // no messages (and no retries) unless the place has actually moved.
+      const quiet = automatic && this.locationSource() === 'device';
+      if (!quiet) this.locating.set(true);
+      if (attempt === 0 && !quiet) this.say('Finding your location…');
       navigator.geolocation.getCurrentPosition(
         (position) => {
+          if (automatic && this.locationSource() === 'manual') return finish(false); // keep the place they typed
           const { latitude, longitude } = position.coords;
+          const before = `${this.values()['latitude']}|${this.values()['longitude']}`;
           this.setPlace(round1(clamp(latitude, -85, 85)), round1(longitude), 'device');
           try {
             localStorage.setItem(STORAGE_LOCATION, JSON.stringify({ latitude: this.values()['latitude'], longitude: this.values()['longitude'] }));
           } catch {
             // ignore
           }
-          this.say(`Using your location: ${this.values()['latitude']}°, ${this.values()['longitude']}°.`);
-          resolve(true);
+          if (!quiet || before !== `${this.values()['latitude']}|${this.values()['longitude']}`) {
+            this.say(`Using your location: ${this.values()['latitude']}°, ${this.values()['longitude']}°.`);
+          }
+          finish(true);
         },
         (error) => {
-          this.say(
-            error.code === error.PERMISSION_DENIED
-              ? 'Location access was declined, so the sun uses an estimate from your time zone.'
-              : 'Your location could not be found, so the sun uses an estimate from your time zone.',
-          );
-          resolve(false);
+          if (quiet) return finish(false); // the saved location is still good; say nothing
+          if (error.code === error.PERMISSION_DENIED) {
+            this.say('Location access was declined, so the sun uses an estimate from your time zone.');
+            return finish(false);
+          }
+          if (automatic && attempt < LOCATE_RETRY_DELAYS.length) {
+            // Not found yet (timed out, or no signal for now): keep the estimate, and try again shortly.
+            if (attempt === 0) {
+              this.say('Still looking for your location. The sun uses an estimate from your time zone until it is found.');
+            }
+            this.locateRetry = setTimeout(() => void this.locate(true, attempt + 1).then(resolve), LOCATE_RETRY_DELAYS[attempt]);
+            return;
+          }
+          this.say('Your location could not be found, so the sun uses an estimate from your time zone.');
+          finish(false);
         },
-        { maximumAge: 3_600_000, timeout: 10_000 },
+        { maximumAge: 3_600_000, timeout: 20_000 },
       );
     });
   }

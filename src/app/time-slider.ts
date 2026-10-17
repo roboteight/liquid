@@ -87,7 +87,9 @@ function trace(points: Point[]): string {
         type="button"
         class="pin"
         [class.on]="source() === 'device'"
+        [class.busy]="locating()"
         [attr.aria-pressed]="source() === 'device'"
+        [attr.aria-busy]="locating()"
         aria-label="Use my location"
         [title]="locationTitle()"
         (click)="useLocation()"
@@ -179,6 +181,7 @@ export class TimeSlider {
   /** "Now" is there whenever something is off the real sun: a scrubbed time, or a light dragged by hand. */
   protected readonly showNow = computed(() => this.scrubbed() || this.manual());
   protected readonly source = this.settings.locationSource;
+  protected readonly locating = this.settings.locating;
   /** The location message while it is on screen (the timing lives in LiquidSettings so other parts can react). */
   protected readonly note = this.settings.locationNote;
   /** The bar is shown for a few seconds after load so people notice it, then it fades until hovered or focused. */
@@ -188,6 +191,7 @@ export class TimeSlider {
   private readonly noteEl = viewChild<ElementRef<HTMLElement>>('noteEl');
 
   protected readonly locationTitle = computed(() => {
+    if (this.locating()) return 'Finding your location…';
     const v = this.settings.values();
     const where = `${Math.abs(v['latitude']).toFixed(1)}° ${v['latitude'] >= 0 ? 'N' : 'S'}, ${Math.abs(v['longitude']).toFixed(1)}° ${v['longitude'] >= 0 ? 'E' : 'W'}`;
     switch (this.source()) {
