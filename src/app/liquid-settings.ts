@@ -1,5 +1,5 @@
 import { Injectable, computed, signal } from '@angular/core';
-import { BodyPosition, HORIZON_ALTITUDE, Sky, SunTimes, describeSky, estimateLocation, sky, sunTimes } from './solar';
+import { BodyPosition, HORIZON_ALTITUDE, MoonTimes, Sky, SunTimes, describeSky, estimateLocation, moonTimes, sky, sunTimes } from './solar';
 
 export const BAND_COUNT = 4;
 
@@ -84,6 +84,7 @@ export const SETTING_DEFS: SettingDef[] = [
 
   def('Light', 'lightShow', 'Show light (0 = off)', [0, 1, 1], 1),
   def('Light', 'lightHue', 'Light colour (hue)', [0, 360, 1], 32),
+  def('Light', 'moonSize', 'Moon size (relative to the sun)', [0.3, 1.2, 0.05], 0.6),
   def('Light', 'lightOrbSize', 'Orb size (px)', [10, 240, 1], 110),
   def('Light', 'lightFollowTime', 'Follow time of day (0 = manual)', [0, 1, 1], 1),
   def('Light', 'lightClock', 'Time of day (h, -1 = real clock)', [-1, 24, 0.1], -1),
@@ -177,6 +178,7 @@ export class LiquidSettings {
   private noteTimer?: ReturnType<typeof setTimeout>;
 
   private sunTimesCache?: { key: string; times: SunTimes };
+  private moonTimesCache?: { key: string; times: MoonTimes };
 
   constructor() {
     void this.startLocation();
@@ -285,6 +287,24 @@ export class LiquidSettings {
     return this.sunTimesCache.times;
   }
 
+  /** Moonrise and moonset for the scene's day (cached; recomputed when the place or day changes). */
+  moonTimesFor(now = new Date()): MoonTimes {
+    const [lat, lng] = this.latLng();
+    const start = this.dayStart(now);
+    const key = `${start.getTime()}|${lat}|${lng}`;
+    if (this.moonTimesCache?.key !== key) this.moonTimesCache = { key, times: moonTimes(start, lat, lng) };
+    return this.moonTimesCache.times;
+  }
+
+  /** Moonrise and moonset for the scene's day, in words. */
+  moonTimesText(now = new Date()): string {
+    const t = this.moonTimesFor(now);
+    const list = (label: string, hours: number[]) => hours.map((h) => `${label} ${this.formatHour(h)}`);
+    const parts = [...list('Moonrise', t.rises), ...list('moonset', t.sets)];
+    if (parts.length) return `${parts.join(', ')}.`;
+    return t.upAllDay ? 'The moon is up all day.' : 'The moon stays below the horizon all day.';
+  }
+
   /** Saved so the page can pick light or dark mode correctly before anything has loaded (see index.html). */
   private rememberSunTimes(start: Date, times: SunTimes): void {
     try {
@@ -324,7 +344,7 @@ export class LiquidSettings {
     this.body = body.kind;
     this.daylight = body.brightness;
     this.lightSat = body.kind === 'sun' ? 100 : 45;
-    this.lightScale = body.kind === 'sun' ? 1 : 0.6;
+    this.lightScale = body.kind === 'sun' ? 1 : v['moonSize'];
     const changed = (key: string, to: number) => Math.abs(v[key] - to) > 1e-4;
     if (changed('lightX', x) || changed('lightY', y) || changed('lightHue', hue)) {
       this.values.update((all) => ({ ...all, lightX: x, lightY: y, lightHue: hue }));

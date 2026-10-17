@@ -127,7 +127,7 @@ export class LightSource {
     // Re-place it when any of these change (a computed, so the effect ignores every other setting).
     const clockKey = computed(() => {
       const v = this.settings.values();
-      return `${v['lightFollowTime']}|${v['lightClock']}|${v['latitude']}|${v['longitude']}|${v['dayOffset']}`;
+      return `${v['lightFollowTime']}|${v['lightClock']}|${v['latitude']}|${v['longitude']}|${v['dayOffset']}|${v['moonSize']}`;
     });
     effect(() => {
       void clockKey();

@@ -48,7 +48,7 @@ export class SceneDescription {
   });
 
   protected readonly sky = computed(() => `${this.time()}. ${this.settings.describeNow()}`);
-  protected readonly times = computed(() => this.settings.sunTimesText());
+  protected readonly times = computed(() => `${this.settings.sunTimesText()} ${this.settings.moonTimesText()}`);
 
   protected readonly light = computed(() => {
     const v = this.settings.values();

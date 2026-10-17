@@ -118,6 +118,30 @@ export function sunTimes(dayStart: Date, latitude: number, longitude: number): S
   return { rise, set, noon, alwaysUp: rise === null && set === null && anyUp };
 }
 
+export interface MoonTimes {
+  /** Hours since local midnight at which the moon rises and sets within that day (usually one of each, sometimes none). */
+  rises: number[];
+  sets: number[];
+  /** When it neither rises nor sets that day: whether it is up (true) or down (false) throughout. */
+  upAllDay: boolean;
+}
+
+/** Moonrise and moonset for the local day beginning at `dayStart`: when the moon's altitude crosses the horizon. */
+export function moonTimes(dayStart: Date, latitude: number, longitude: number): MoonTimes {
+  const step = 5; // minutes
+  const rises: number[] = [];
+  const sets: number[] = [];
+  let previous = sky(dayStart, latitude, longitude).moon.altitude;
+  const startedUp = previous > 0;
+  for (let minute = step; minute <= 24 * 60; minute += step) {
+    const altitude = sky(new Date(dayStart.getTime() + minute * 60000), latitude, longitude).moon.altitude;
+    if (previous <= 0 && altitude > 0) rises.push((minute - step / 2) / 60);
+    if (previous > 0 && altitude <= 0) sets.push((minute - step / 2) / 60);
+    previous = altitude;
+  }
+  return { rises, sets, upAllDay: rises.length === 0 && sets.length === 0 && startedUp };
+}
+
 /**
  * A rough guess at where the user is from their time zone alone, used until they share their location.
  * Longitude comes from the UTC offset (15 degrees per hour); the hemisphere from which half of the year the

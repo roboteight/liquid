@@ -19,6 +19,8 @@ const PEEK_MS = 4500;
 
 /** Width of the native slider thumb in px (see the stylesheet) and the keyboard step in hours (the input's `step`). */
 const THUMB_WIDTH = 22;
+/** Diameter of the sun's thumb on the track (px); the moon's is a share of this. */
+const THUMB_SIZE = 22;
 const KEY_STEP = 0.1;
 
 /** The track is drawn in this coordinate space and stretched to fit; the thumb is placed in CSS percentages. */
@@ -109,10 +111,15 @@ function trace(points: Point[]): string {
       <div class="track" [class.manual]="manual()">
         <svg viewBox="0 0 960 52" preserveAspectRatio="none" aria-hidden="true" focusable="false">
           <path class="horizon" [attr.d]="horizon" />
+          <path class="moonbelow" [attr.d]="paths().moonBelow" />
           <path class="below" [attr.d]="paths().sunBelow" />
           <path class="night" [attr.d]="paths().moon" />
           <path class="day" [attr.d]="paths().sun" />
         </svg>
+        <!-- Moonrise and moonset, as small rings where the moon's path crosses the horizon line. -->
+        @for (at of moonMarks(); track at) {
+          <span class="moonmark" [style.--at]="at" [style.bottom.px]="horizonFromBottom" aria-hidden="true"></span>
+        }
         @for (mark of marks(); track mark.label) {
           <span class="mark" [style.--at]="mark.at" aria-hidden="true">{{ mark.label }}</span>
         }
@@ -123,6 +130,7 @@ function trace(points: Point[]): string {
           aria-hidden="true"
           [class.moon]="thumb().kind === 'moon'"
           [style.--at]="hour() / 24"
+          [style.--size]="thumb().size + 'px'"
           [style.bottom.px]="horizonFromBottom + thumb().lift"
         ></span>
 
@@ -206,8 +214,9 @@ export class TimeSlider {
 
   /**
    * The sun's whole path across the day: solid while it is up, dashed as it continues below the horizon line at
-   * night, so the curve is one smooth wave rather than a hump with flat lines either side. The moon's arc (dotted)
-   * is drawn only while the moon is up. Each is scaled to its own body's highest point that day.
+   * night, so the curve is one smooth wave rather than a hump with flat lines either side. The moon has its own whole
+   * path too, dotted: bolder above the line while the moon is up, fainter below it. Each is scaled to its own body's
+   * highest point that day.
    */
   protected readonly paths = computed(() => {
     const v = this.settings.values();
@@ -223,13 +232,23 @@ export class TimeSlider {
     }
     const sunPoints = (up: boolean): Point[] =>
       samples.map((s) => ({ x: s.x, y: HORIZON - lift(s.sun, sunPeak), on: s.sun > HORIZON_ALTITUDE === up }));
+    const moonPoints = (up: boolean): Point[] =>
+      samples.map((s) => ({ x: s.x, y: HORIZON - lift(s.moon, moonPeak), on: s.moon > 0 === up }));
     return {
       sun: trace(sunPoints(true)),
       sunBelow: trace(sunPoints(false)),
-      moon: trace(samples.map((s) => ({ x: s.x, y: HORIZON - lift(s.moon, moonPeak), on: s.moon > 0 }))),
+      moon: trace(moonPoints(true)),
+      moonBelow: trace(moonPoints(false)),
       sunPeak,
       moonPeak,
     };
+  });
+
+  /** Where along the day the moon rises and sets (as fractions of the day), for the rings on the horizon line. */
+  protected readonly moonMarks = computed(() => {
+    this.settings.values(); // recompute when the place or season changes
+    const t = this.settings.moonTimesFor();
+    return [...t.rises, ...t.sets].map((h) => h / 24);
   });
 
   /** Sunrise, solar noon and sunset along the track. */
@@ -244,8 +263,8 @@ export class TimeSlider {
   });
 
   /**
-   * Where the thumb sits: on the sun's path by day, on the moon's arc while the moon is up at night, and on the
-   * sun's dashed path below the line otherwise. The icon is the sun or the moon, whichever lights the scene.
+   * Where the thumb sits: on the sun's path while the sun lights the scene, and on the moon's own path (above the
+   * line while it is up, below it when it is not) while the moon does. The icon is the sun or the moon to match.
    */
   protected readonly thumb = computed(() => {
     const v = this.settings.values();
@@ -253,15 +272,19 @@ export class TimeSlider {
     const body = this.settings.bodyAt(when);
     const s = sky(when, v['latitude'], v['longitude']);
     const { sunPeak, moonPeak } = this.paths();
-    const onMoonArc = body.kind === 'moon' && s.moon.altitude > 0;
-    return { kind: body.kind, lift: onMoonArc ? lift(s.moon.altitude, moonPeak) : lift(s.sun.altitude, sunPeak) };
+    return {
+      kind: body.kind,
+      lift: body.kind === 'moon' ? lift(s.moon.altitude, moonPeak) : lift(s.sun.altitude, sunPeak),
+      // The sun's thumb is full size; the moon's is smaller by the same ratio as in the sky.
+      size: body.kind === 'moon' ? Math.max(Math.round(THUMB_SIZE * v['moonSize']), 12) : THUMB_SIZE,
+    };
   });
 
   /** Sunrise, noon and sunset, and where the sun or moon is at the time shown: read out with the slider's value. */
   protected readonly skyText = computed(() => {
     this.settings.values(); // recompute when the place or season changes
     const sky = this.settings.skyAt(this.settings.at(this.hour()));
-    return `${this.settings.sunTimesText()} ${describeSky(sky)}`;
+    return `${this.settings.sunTimesText()} ${this.settings.moonTimesText()} ${describeSky(sky)} The solid line is the sun's path across the day and the dotted line is the moon's.`;
   });
 
   protected readonly daytime = computed(() => this.settings.isDay(this.hour()));

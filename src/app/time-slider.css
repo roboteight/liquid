@@ -72,11 +72,35 @@ path {
   opacity: 0.6;
 }
 
+/* The moon's path: dotted and drawn in the text colour (so it is apart from the sun's blue line), bolder above the
+   horizon line while the moon is up and fainter below it. */
 .night {
-  stroke: var(--accent-text);
-  stroke-width: 2;
-  stroke-dasharray: 2 6;
-  opacity: 0.55; /* the moon's path: fainter and dotted, so it reads as secondary to the sun's */
+  stroke: var(--ui-text);
+  stroke-width: 2.6;
+  stroke-dasharray: 0.1 6;
+  opacity: 0.8;
+}
+
+.moonbelow {
+  stroke: var(--ui-text);
+  stroke-width: 2.2;
+  stroke-dasharray: 0.1 7;
+  opacity: 0.35;
+}
+
+/* Moonrise and moonset: small rings on the horizon line. */
+.moonmark {
+  position: absolute;
+  left: calc(11px + (100% - 22px) * var(--at));
+  width: 9px;
+  height: 9px;
+  box-sizing: border-box;
+  background: var(--panel);
+  border: 1.5px solid var(--ui-text);
+  border-radius: 50%;
+  opacity: 0.85;
+  transform: translate(-50%, 50%);
+  pointer-events: none;
 }
 
 .mark {
@@ -93,9 +117,9 @@ path {
 .thumb {
   position: absolute;
   left: calc(11px + (100% - 22px) * var(--at));
-  width: 22px;
-  height: 22px;
-  margin: 0 0 -11px -11px;
+  width: var(--size, 22px);
+  height: var(--size, 22px);
+  transform: translate(-50%, 50%); /* centred on its point on the path, whatever its size */
   border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #fff3b0 0%, #ffbf3a 55%, #f08a1c 100%);
   border: 1.5px solid rgba(255, 255, 255, 0.9);
