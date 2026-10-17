@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { LiquidSettings } from './liquid-settings';
 import { ThemeService } from './theme';
+import { WeatherService } from './weather';
 
 /** How long to wait after the last change before announcing, so a drag across the slider is spoken once. */
 const ANNOUNCE_DELAY_MS = 800;
@@ -33,6 +34,7 @@ const ANNOUNCE_DELAY_MS = 800;
 export class SceneDescription {
   private readonly settings = inject(LiquidSettings);
   private readonly theme = inject(ThemeService);
+  private readonly weather = inject(WeatherService);
 
   /** Bumped every 30 seconds so the text follows the real clock (this region is not announced, only read). */
   private readonly tick = signal(0);
@@ -74,9 +76,13 @@ export class SceneDescription {
     return `${layers} ${layers === 1 ? 'ridge' : 'ridges'} of mountains line the horizon, paler and hazier the further away. They slide slightly as the mouse moves, and the sun sets behind them.`;
   });
 
-  protected readonly clouds = computed(() =>
-    this.settings.values()['cloudsShow'] > 0 ? 'Clouds drift slowly across the sky.' : 'The clouds are hidden.',
-  );
+  protected readonly clouds = computed(() => {
+    if (this.settings.values()['cloudsShow'] <= 0) return 'The clouds are hidden.';
+    const weather = this.weather.summary();
+    return weather
+      ? `The clouds follow the real weather where you are: ${weather}. They drift the way the wind blows.`
+      : 'Clouds drift slowly across the sky.';
+  });
 
   protected readonly appearance = computed(() => {
     const following = this.settings.values()['themeAuto'] > 0;

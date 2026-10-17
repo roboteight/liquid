@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { LiquidSettings } from './liquid-settings';
 import { ThemeService } from './theme';
+import { WeatherService } from './weather';
 
 const SPRITE_W = 640;
 const SPRITE_H = 260;
@@ -36,11 +37,20 @@ interface Cloud {
   y: number;
   scale: number;
   phase: number;
+  /** Position among the clouds of its layer: the lowest ranks are shown first as the cover grows. */
+  rank: number;
 }
 
+/** A reported cloud cover (0 to 1) as the share of clouds to show: a clear sky shows none, and even a little cover shows some. */
+const coverToShare = (cover: number) => (cover < 0.03 ? 0 : 0.12 + 0.88 * cover);
+
 /**
- * Slow, soft clouds moving the way the current flows. The `back` instance sits behind the water and
- * light; the `front` instance floats above the light's glow, so passing clouds dim it.
+ * Slow, soft clouds. The `back` instance sits behind the water and light; the `front` instance floats above the
+ * light's glow, so passing clouds dim it.
+ *
+ * With "Real clouds" on (and a real location) they follow the weather where the user is: the high, middle and low
+ * cloud layers set how many far, middle and near clouds there are, the overall cover sets how thick they are, and
+ * the wind sets which way and how fast they drift. Otherwise the cloud sliders and the current decide.
  */
 @Component({
   selector: 'app-clouds',
@@ -66,6 +76,7 @@ export class Clouds implements OnDestroy {
   private readonly zone = inject(NgZone);
   private readonly settings = inject(LiquidSettings);
   private readonly theme = inject(ThemeService);
+  private readonly weather = inject(WeatherService);
   readonly layer = input<'back' | 'front'>('back');
   private readonly canvasRef = viewChild.required<ElementRef<HTMLCanvasElement>>('canvas');
 
@@ -77,6 +88,7 @@ export class Clouds implements OnDestroy {
   /** Scratch layer used to build the light's glow in the shape of the clouds only. */
   private lit = document.createElement('canvas');
   private clouds: Cloud[] = [];
+  private layerCounts: Record<number, number> = {};
   private raf = 0;
   private last = 0;
   private time = 0;
@@ -122,10 +134,15 @@ export class Clouds implements OnDestroy {
     const set = this.layer();
     const count = CLOUDS_PER_SET[set];
     const layers = LAYER_SETS[set];
+    const seen: Record<number, number> = {};
+    this.layerCounts = {};
     return Array.from({ length: count }, (_, i) => {
       const layer = layers[i % layers.length];
       const l = LAYERS[layer];
+      const rank = (seen[layer] = (seen[layer] ?? -1) + 1);
+      this.layerCounts[layer] = rank + 1;
       return {
+        rank,
         sprite: Math.floor(Math.random() * SPRITE_VARIANTS),
         layer,
         x: (i / count) * (this.width + 600) - 300 + Math.random() * 120,
@@ -187,15 +204,28 @@ export class Clouds implements OnDestroy {
     const darkSprites = tone > 0.01 ? this.spritesFor(true) : null;
     const lightSprites = tone < 0.99 ? this.spritesFor(false) : null;
     const opacity = s['cloudOpacity'];
-    const visible = Math.round(this.clouds.length * s['cloudCover']);
-    if (!opacity || !visible) return;
+    if (!opacity) return;
 
-    // Clouds drift the way the current flows (rightwards if it's still).
-    const dir = Math.sign(s['currentSpeed']) || 1;
-    const speed = s['calm'] > 0 ? 0 : s['cloudSpeed'];
+    // The real weather, if it is on and known: how much cloud there is at each height, and the wind.
+    const weather = s['cloudsReal'] > 0 ? this.weather.current() : null;
+    const share = (layer: number): number =>
+      weather ? coverToShare(layer === 0 ? weather.high : layer === 1 ? weather.mid : weather.low) : s['cloudCover'];
+    const thickness = weather ? 0.55 + 0.9 * weather.cover : 1; // overcast skies are denser than a few wisps
 
-    for (let i = 0; i < this.clouds.length; i++) {
-      const c = this.clouds[i];
+    // Which way and how fast they drift. In the real weather that is the wind: it blows toward the opposite of the
+    // bearing it comes from, and on screen west is to the right when looking south (the northern hemisphere) and
+    // east is to the right when looking north. Otherwise they go with the current (rightwards if it is still).
+    let dir = Math.sign(s['currentSpeed']) || 1;
+    let drift = 1;
+    if (weather) {
+      const toward = ((weather.windFrom + 180) * Math.PI) / 180;
+      const sideways = (s['latitude'] >= 0 ? -1 : 1) * Math.sin(toward);
+      dir = Math.sign(sideways) || dir;
+      drift = Math.min(Math.max(weather.windKmh / 12, 0.3), 4) * Math.max(Math.abs(sideways), 0.25);
+    }
+    const speed = s['calm'] > 0 ? 0 : s['cloudSpeed'] * drift;
+
+    for (const c of this.clouds) {
       const layer = LAYERS[c.layer];
       const size = c.scale * s['cloudSize'];
       const w = SPRITE_W * size;
@@ -203,13 +233,13 @@ export class Clouds implements OnDestroy {
       c.x += dir * layer.speed * speed * dt;
       if (dir > 0 && c.x > width) c.x = -w;
       if (dir < 0 && c.x < -w) c.x = width;
-      if (i >= visible) continue;
+      if (c.rank >= Math.round(this.layerCounts[c.layer] * share(c.layer))) continue;
 
       // Each cloud slowly thickens and thins, and bobs a little, so it never looks like a rigid picture.
       const breathe = 0.82 + 0.18 * Math.sin(this.time * 0.18 + c.phase);
       const bob = Math.sin(this.time * 0.05 + c.phase) * 6;
       const frontDensity = this.layer() === 'front' ? s['cloudFrontDensity'] : 1;
-      const base = layer.alpha * frontDensity * opacity * breathe;
+      const base = layer.alpha * frontDensity * opacity * breathe * thickness;
       const top = (c.y + s['cloudAltitude']) * height + bob;
       if (darkSprites) {
         ctx.globalAlpha = Math.min(base * tone, 0.95);

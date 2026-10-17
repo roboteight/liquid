@@ -4,6 +4,19 @@
 
 This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 22.2.3.
 
+## Location and weather
+
+The sun, moon and sunrise/sunset times come from the visitor's latitude and longitude. The page asks the browser for
+the device location on load; if that is declined or blocked it falls back to an estimate from the time zone, and the
+latitude and longitude can also be set by hand in the controls drawer. The location stays on the device (it is saved in
+`localStorage` only).
+
+The clouds follow the real weather where the visitor is: cloud cover at three heights and the wind come from
+[Open-Meteo](https://open-meteo.com) (free, no account). This is the only thing the app sends anywhere: the
+coordinates, rounded to 0.1° (about 11 km), are sent to `api.open-meteo.com`, and only when the location is real (the
+device's, or typed in) and "Real clouds and wind for my location" is on. A time-zone guess is never sent. The answer is
+kept for 20 minutes, and if the request fails the cloud sliders are used instead.
+
 ## Development server
 
 To start a local development server, run:
