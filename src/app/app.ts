@@ -19,9 +19,8 @@ import { SceneDescription } from './scene-description';
 /** Typing this word makes the input drop into the water. */
 const TRIGGER = /something/i;
 
-/** The hint toast waits this long after load before it appears. */
+/** The hint toast waits this long after every page load before it appears. */
 const HINT_DELAY_MS = 2500;
-const HINT_STORAGE_KEY = 'liquid-hint-done';
 
 @Component({
   selector: 'app-root',
@@ -101,11 +100,12 @@ export class App {
   });
   protected readonly announcement = signal('');
   protected readonly hintVisible = signal(false);
-  private hintDone = this.readHintDone();
+  /** True once the hint has done its job on this page view (dismissed, or the word was typed). Not remembered. */
+  private hintDone = false;
   private readonly destroyRef = inject(DestroyRef);
 
   constructor() {
-    // Show the hint a moment after load, unless it has already done its job this session.
+    // Show the hint a moment after every load, unless it is dismissed or the word is typed first.
     afterNextRender(() => {
       if (this.hintDone) return;
       const timer = setTimeout(() => this.hintVisible.set(!this.hintDone), HINT_DELAY_MS);
@@ -141,23 +141,13 @@ export class App {
     }
   }
 
-  /** Hides the hint and keeps it hidden for the rest of this browser session. */
+  /**
+   * Hides the hint for the rest of this page view. It is deliberately not remembered, so it is back after a reload:
+   * the point is that a visitor always learns what to type.
+   */
   protected finishHint(): void {
     this.hintDone = true;
     this.hintVisible.set(false);
-    try {
-      sessionStorage.setItem(HINT_STORAGE_KEY, '1');
-    } catch {
-      // Storage can be blocked; the hint then just stays hidden for this page load.
-    }
-  }
-
-  private readHintDone(): boolean {
-    try {
-      return sessionStorage.getItem(HINT_STORAGE_KEY) === '1';
-    } catch {
-      return false;
-    }
   }
 
   /** The input itself falls into the water; a fresh, empty one slides down from the top once it has sunk. */
